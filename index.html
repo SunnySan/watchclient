@@ -1,0 +1,308 @@
+﻿<!DOCTYPE html>
+<html>
+	<title>Device Info</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+	<!--<link rel="stylesheet" href="css/jquery.mobile-1.3.2.min.css" />--><!--JQuery Mobile theme-->
+	<link rel="stylesheet" href="css/jquery.mobile.structure-1.3.2.min.css" />
+	<link rel="stylesheet" href="css/myvibo.min.css" /><!--將JQuery Mobile theme加上 swatch="F"-->
+	<link rel="stylesheet" href="css/jquery.mobile.simpledialog.min.css" /><!--類似alert的dialog，請參考 http://dev.jtsage.com/jQM-SimpleDialog/demos2/ -->
+	<link rel="stylesheet" href="css/style.css" />
+	
+	<script src="js/jquery-1.10.2.min.js"></script>
+	<script type="text/javascript" src="js/initJQueryMobile.js"></script><!--初始化 JQuery Mobile -->
+	<script src="js/jquery.mobile-1.3.2.min.js"></script>
+	<script src="js/jquery.mobile.simpledialog2.min.js"></script><!--類似alert的dialog，請參考 http://dev.jtsage.com/jQM-SimpleDialog/demos2/ -->
+	<script type="text/javascript" src="js/util.js"></script>
+	<script type="text/javascript" src="js/jquery.blockUI.js"></script><!--JQuery BlockUI，請參考http://www.malsup.com/jquery/block/ -->
+	
+	<script src="cordova.js"></script><!--給PhoneGap用的-->
+	<!--<script src="GAPlugin.js"></script>--><!--APP用的Google Analytics 追蹤函數，請參考 https://github.com/phonegap-build/GAPlugin -->
+	<script type="text/javascript" src="js/initPhoneGap.js"></script><!--初始化PhoneGap-->
+	<script src="js/mqttws31.js"></script><!-- MQTT client，請參考 http://www.eclipse.org/paho/ -->
+	
+	<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+</head>
+
+
+<body>
+
+<!-- ****************************** 首頁 ***********************************-->
+<div data-role="page" id="home">
+	<div data-role="header" data-position="fixed" class="vibo-header" style="top:0px!important;position:fixed;">
+		<div class="header-padding"></div>
+	</div><!-- /header -->
+	
+	<!--<div data-role="content" style="border:0px !important;padding:0px !important;margin:0px !important;overflow:hidden !important;">-->
+	<div data-role="content">
+		<h3 class="PageTitle">Device info.</h3>
+		<form id="frmUserLogin"  style="padding:10px">
+			<label for="txtUserName">Your name</label>
+			<input type="text" name="txtUserName" id="txtUserName" maxlength="50" value="MyWatch">
+		    <a id="btnStart" name="btnStart" href="#" data-role="button" onclick="doStart();return false;">Start</a>
+		    <a id="btnStop" name="btnStop" href="#" data-role="button" onclick="doStop();return false;" style="display:none;">Stop</a>
+			<label>
+				<input type="checkbox" id="chkAutoMoving" name="chkAutoMoving">Auto moving
+			</label>
+
+			<label for="txtLatitude" id="txtLatitudeLabel" name="txtLatitudeLabel">Latitude</label>
+			<input type="text" name="txtLatitude" id="txtLatitude" maxlength="50" value="">
+			<label for="txtLongitude">Longitude</label>
+			<input type="text" name="txtLongitude" id="txtLongitude" maxlength="50" value="">
+
+			<div class="ui-grid-a">
+				<div class="ui-block-a" style="padding-right:10px;">
+					<label for="txtMessage">Message</label>
+					<input type="text" name="txtMessage" id="txtMessage" value="100">
+				</div>
+			</div><!-- /grid-a -->
+			
+			<div>Status:&nbsp;
+				<span id="spNotConnected" name="spNotConnected" style="color:#FF0000;">Not connected.</span>
+				<span id="spConnected" name="spConnected" style="color:#429F42;display:none;">connected.</span>
+			</div>
+		</form>
+	</div><!-- /content -->
+	
+	<div data-role="footer" data-tap-toggle="false" data-position="fixed" style="border:0px !important;padding:0px !important;margin:0px !important;bottom:0px !important;position:fixed;">
+		<div class="footer-copyright">
+			&copy;Taisys Holding Co. Ltd. All rights reserved.
+		</div>
+	</div><!-- /footer -->
+</div><!-- 首頁 -->
+
+</body>
+</html>
+<script type="text/javascript" src="js/initPage.js"></script><!--初始化頁面，設定header及footer -->
+
+<script type="text/javascript">
+	
+	$('#home').on('pageshow',function(event){
+		$("#home div[data-role='footer']").show();
+		getPosition();
+		//requestReadPermission();
+		//hasReadPermission();
+		//getMySIMInfo();
+		//window.plugins.imeiplugin.getImei(getImeiCallback);
+	});
+
+</script>
+
+<script type="text/javascript">
+	/**************** 取得SIM卡資訊 **************/
+	/*
+	function getImeiCallback(imei) {
+		uuid = imei;
+	}
+	*/
+	
+	function getMySIMInfo(){
+		//MsgBox("5");
+		window.plugins.sim.getSimInfo(successCallbackSIMInfo, errorCallbackSIMInfo);
+		//MsgBox("6");
+	}
+
+	function successCallbackSIMInfo(result) {
+		//MsgBox("7");
+		MsgBox(result);
+		//MsgBox("8");
+	}
+	
+	function errorCallbackSIMInfo(error) {
+		//MsgBox("9");
+		MsgBox(error);
+		//MsgBox("10");
+	}
+
+	// Android only: check permission 
+	function hasReadPermission() {
+		//MsgBox("3");
+		window.plugins.sim.hasReadPermission(successCallbackSIMInfo, errorCallbackSIMInfo);
+		//MsgBox("4");
+	}
+	
+	// Android only: request permission 
+	function requestReadPermission() {
+		//MsgBox("1");
+		window.plugins.sim.requestReadPermission(successCallbackSIMInfo, errorCallbackSIMInfo);
+		//MsgBox("2");
+	}
+	
+	/**************** 取得SIM卡資訊 **************/
+
+	function getPosition(){
+		if(navigator.geolocation) {
+			navigator.geolocation.getCurrentPosition(function(position) {
+				if (beEmpty(position.coords.latitude) || beEmpty(position.coords.longitude)){
+					MsgBox("Unable to get your GPS location, please make sure you have turned on GPS, will set to default location!");
+					$('#frmUserLogin #txtLatitude').val('25');
+					$('#frmUserLogin #txtLongitude').val('120');
+				}else{
+					$('#txtLatitude').val(position.coords.latitude);
+					$('#txtLongitude').val(position.coords.longitude);
+				}
+			}, function() {
+				//unBlockUI();
+				MsgBox("Unable to get your GPS location, please make sure you have turned on GPS, will set to default location!");
+				$('#frmUserLogin #txtLatitude').val('25');
+				$('#frmUserLogin #txtLongitude').val('120');
+			},
+			{ maximumAge: 5000, timeout: 30000, enableHighAccuracy: true }
+			);	//navigator.geolocation.getCurrentPosition(function(position) {
+		} else {
+			// Browser doesn't support Geolocation
+			//unBlockUI();
+			MsgBox("Unable to get your GPS location, will set to default location!");
+			$('#frmUserLogin #txtLatitude').val('25');
+			$('#frmUserLogin #txtLongitude').val('120');
+		}	//if(navigator.geolocation) {
+
+	}
+
+	var uuid		= "";
+	var username	= "";
+	
+	//註冊device，開始使用
+	function doStart(){
+		var username	= $('#frmUserLogin #txtUserName').val();
+
+		if (isRunInApp() && beEmpty(uuid)){
+			uuid = device.uuid;
+		}else{
+			uuid = Math.floor((Math.random() * 10000000000) + 1);
+		}
+		uuid = "12345678";	//Sunny: watch測試
+		if (beEmpty(uuid)){
+			MsgBox('Unable to obtain your device ID!');
+			return;
+		}
+		if (beEmpty(username)){
+			MsgBox('Please input your name!');
+			return;
+		}
+		var sData = "";
+		sData = "uuid=" + uuid;
+		sData += "&username=" + username;
+		//getDataFromServer("ajaxRegisterIoTDevice.jsp", sData, "json", doStart_Success);
+		doMQTTConnect();
+	}	//function doUserLogin(){
+	
+	function doStart_Success(data){
+		var ResultCode = data.resultCode;
+		var ResultText = data.resultText;
+		if (ResultCode!='00000'){	//作業失敗
+			MsgBox(ResultText);
+			return;
+		}	//if (ResultCode=='00000'){	//作業成功
+		doMQTTConnect();
+	}
+
+	//const TOPIC = "temp/random";
+	const TOPIC = "com/taisys/iot/";
+	
+	var client = null;
+	var myInterval = null
+
+	function doMQTTConnect(){
+		client = new Paho.MQTT.Client("test.mosquitto.org", 8080, trim(username) + uuid);
+		client.onConnectionLost = onConnectionLost;
+		client.onMessageArrived = onMessageArrived;
+		client.connect({timeout:10, onSuccess:onConnect, onFailure:onConnectFail});
+	};
+
+	function onConnect() {
+		// Once a connection has been made, make a subscription and send a message.
+		console.log("onConnect");
+		client.subscribe(TOPIC + uuid);
+		/*
+		message = new Paho.MQTT.Message("Hello");
+		message.destinationName = TOPIC + uuid;
+		client.send(message); 
+		*/
+
+		myInterval = setInterval(function () {
+			publish_message();
+		},10000);
+
+		$('#frmUserLogin #btnStart').hide();
+		$('#frmUserLogin #btnStop').show();
+		$('#frmUserLogin #spNotConnected').hide();
+		$('#frmUserLogin #spConnected').show();
+
+	};
+	function onConnectFail(message) {
+		MsgBox("Failed to connect to MQTT server: " + message.errorMessage);
+		console.log("onConnectFail:"+message.errorMessage);
+	};
+	function onConnectionLost(responseObject) {
+		if (responseObject.errorCode !== 0){
+			$('#frmUserLogin #btnStart').show();
+			$('#frmUserLogin #btnStop').hide();
+			$('#frmUserLogin #spNotConnected').show();
+			$('#frmUserLogin #spConnected').hide();
+			MsgBox("Lost connection to server");
+			console.log("onConnectionLost:"+responseObject.errorMessage);
+		}
+	};
+	function onMessageArrived(message) {
+		console.log("onMessageArrived:"+message.payloadString);
+		var payload = message.payloadString;
+		var displayMessage = "";
+		if (payload.indexOf("ServerMessage")>0){	//這是從server送過來的訊息
+			var obj = JSON.parse(payload);
+			displayMessage = obj.ServerMessage;
+			MsgBox(displayMessage);
+		}
+		if (payload.indexOf("GeoFence")>0){	//這是從server送過來的GeoFence設定
+			var obj = JSON.parse(payload);
+			displayMessage = obj.GeoFence;
+			$('#txtMessage').val("New fence: " + JSON.stringify(displayMessage));
+		}
+	};	//function onMessageArrived(message) {
+
+	// 發佈訊息
+	function publish_message() {
+		if ($('#frmUserLogin #chkAutoMoving').is(':checked')){	//自動移動
+			var lon = parseFloat($('#frmUserLogin #txtLongitude').val());
+			lon -= 0.002;
+			$('#frmUserLogin #txtLongitude').val(lon);
+		}else{
+			if(navigator.geolocation) {
+				navigator.geolocation.getCurrentPosition(function(position) {
+					if (beEmpty(position.coords.latitude) || beEmpty(position.coords.longitude)){
+						$('#txtLatitudeLabel').text('Latitude: Failed to get GPS location.');
+					}else{
+						$('#txtLatitude').val(position.coords.latitude);
+						$('#txtLongitude').val(position.coords.longitude);
+						$('#txtLatitudeLabel').text('Latitude');
+					}
+				}, function() {
+					$('#txtLatitudeLabel').text('Latitude: Failed to get GPS location.');
+				},
+				{ maximumAge: 5000, timeout: 30000, enableHighAccuracy: true }
+				);	//navigator.geolocation.getCurrentPosition(function(position) {
+			} else {
+				$('#txtLatitudeLabel').text('Latitude: Failed to get GPS location.');
+			}	//if(navigator.geolocation) {
+
+		}
+
+		var obj = new Object();
+		obj.lat = $('#frmUserLogin #txtLatitude').val();
+		obj.lon = $('#frmUserLogin #txtLongitude').val();
+		var payload= JSON.stringify(obj);
+	    var message = new Paho.MQTT.Message(payload);
+	    message.destinationName = TOPIC + uuid;
+	    client.send(message);
+	}
+
+	function doStop() {
+		clearInterval(myInterval);
+		client.disconnect();
+		$('#frmUserLogin #btnStart').show();
+		$('#frmUserLogin #btnStop').hide();
+		$('#frmUserLogin #spNotConnected').show();
+		$('#frmUserLogin #spConnected').hide();
+	}
+
+</script>
