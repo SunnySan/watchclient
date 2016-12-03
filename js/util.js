@@ -1,7 +1,7 @@
 /**********這個檔案裡是一些公用的函數**********/
 
 /**********全域變數**********/
-var sServerBaseURL = "http://cms.gslssd.com/iovserver/";	//Server端接收 request 的 URL 路徑
+var sServerBaseURL = "http://cms.gslssd.com/watchserver/";	//Server端接收 request 的 URL 路徑
 
 /**********取得 server API 的 base URL**********/
 function getServerBaseURL(){

@@ -53,7 +53,7 @@
 			<div class="ui-grid-a">
 				<div class="ui-block-a" style="padding-right:10px;">
 					<label for="txtMessage">Message</label>
-					<input type="text" name="txtMessage" id="txtMessage" value="100">
+					<input type="text" name="txtMessage" id="txtMessage" value="" disabled>
 				</div>
 			</div><!-- /grid-a -->
 			
@@ -79,6 +79,7 @@
 	
 	$('#home').on('pageshow',function(event){
 		$("#home div[data-role='footer']").show();
+		getGeoFenceSetting();
 		getPosition();
 		//requestReadPermission();
 		//hasReadPermission();
@@ -159,7 +160,7 @@
 
 	}
 
-	var uuid		= "";
+	var uuid		= "12345678";
 	var username	= "";
 	
 	//註冊device，開始使用
@@ -183,8 +184,8 @@
 		var sData = "";
 		sData = "uuid=" + uuid;
 		sData += "&username=" + username;
-		//getDataFromServer("ajaxRegisterIoTDevice.jsp", sData, "json", doStart_Success);
-		doMQTTConnect();
+		getDataFromServer("ajaxRegisterIoTDevice.jsp", sData, "json", doStart_Success);
+		//doMQTTConnect();
 	}	//function doUserLogin(){
 	
 	function doStart_Success(data){
@@ -202,6 +203,7 @@
 	
 	var client = null;
 	var myInterval = null
+	var lastReportGeoFenceAlertTime = 0;
 
 	function doMQTTConnect(){
 		client = new Paho.MQTT.Client("test.mosquitto.org", 8080, trim(username) + uuid);
@@ -213,6 +215,7 @@
 	function onConnect() {
 		// Once a connection has been made, make a subscription and send a message.
 		console.log("onConnect");
+		$('#txtMessage').val("Connected to server");
 		client.subscribe(TOPIC + uuid);
 		/*
 		message = new Paho.MQTT.Message("Hello");
@@ -231,8 +234,10 @@
 
 	};
 	function onConnectFail(message) {
-		MsgBox("Failed to connect to MQTT server: " + message.errorMessage);
+		//MsgBox("Failed to connect to MQTT server: " + message.errorMessage);
+		$('#txtMessage').val("Failed to connect to MQTT server: " + message.errorMessage);
 		console.log("onConnectFail:"+message.errorMessage);
+		doMQTTConnect();
 	};
 	function onConnectionLost(responseObject) {
 		if (responseObject.errorCode !== 0){
@@ -240,8 +245,10 @@
 			$('#frmUserLogin #btnStop').hide();
 			$('#frmUserLogin #spNotConnected').show();
 			$('#frmUserLogin #spConnected').hide();
-			MsgBox("Lost connection to server");
+			//MsgBox("Lost connection to server");
+			$('#txtMessage').val("Lost connection to server, reconnect...");
 			console.log("onConnectionLost:"+responseObject.errorMessage);
+			doMQTTConnect();
 		}
 	};
 	function onMessageArrived(message) {
@@ -254,8 +261,24 @@
 			MsgBox(displayMessage);
 		}
 		if (payload.indexOf("GeoFence")>0){	//這是從server送過來的GeoFence設定
+			lastReportGeoFenceAlertTime = 0;
 			var obj = JSON.parse(payload);
 			displayMessage = obj.GeoFence;
+			if (beEmpty(JSON.stringify(displayMessage)) || JSON.stringify(displayMessage).length<20){	//清除GeoFence
+				east = 0.0;
+				south = 0.0;
+				west = 0.0;
+				north = 0.0;
+			}else{
+				east = parseFloat(displayMessage.east);
+				south = parseFloat(displayMessage.south);
+				west = parseFloat(displayMessage.west);
+				north = parseFloat(displayMessage.north);
+			}
+			console.log("east=" + east);
+			console.log("south=" + south);
+			console.log("west=" + west);
+			console.log("north=" + north);
 			$('#txtMessage').val("New fence: " + JSON.stringify(displayMessage));
 		}
 	};	//function onMessageArrived(message) {
@@ -294,7 +317,30 @@
 	    var message = new Paho.MQTT.Message(payload);
 	    message.destinationName = TOPIC + uuid;
 	    client.send(message);
-	}
+	    //檢查是否超過GeoFence設定
+	    if (beEmpty(obj.lat) || beEmpty(obj.lon)) return;
+	    if (east==0.0 && south==0.0 && west==0.0 && north==0.0) return;	//無GeoFence設定
+	    var myLat = parseFloat(obj.lat);
+	    var myLon = parseFloat(obj.lon);
+	    var isOutBound = false;
+	    if (myLat>north) isOutBound = true;
+	    if (myLat<south) isOutBound = true;
+	    if (myLon>east) isOutBound = true;
+	    if (myLon<west) isOutBound = true;
+	    if (isOutBound){	//超過GeoFence設定
+	    	console.log("is out bound of GeoFence");
+			if (!Date.now) {
+				Date.now = function() { return new Date().getTime(); }
+			}
+	    	var timeNow = Math.floor(Date.now() / 1000);	//換算成以秒為單位
+	    	if (lastReportGeoFenceAlertTime==0 || (timeNow-lastReportGeoFenceAlertTime)>600){	//每10分鐘告警一次
+	    		lastReportGeoFenceAlertTime = timeNow;
+				var sData = "";
+				sData = "uuid=" + uuid;
+				getDataFromServer("ajaxDoGeoFenceOutboundAlert.jsp", sData, "json", doGeoFenceOutboundAlert_Success);
+	    	}
+	    }	//if (isOutBound){	//超過GeoFence設定
+	}	//function publish_message() {
 
 	function doStop() {
 		clearInterval(myInterval);
@@ -304,5 +350,49 @@
 		$('#frmUserLogin #spNotConnected').show();
 		$('#frmUserLogin #spConnected').hide();
 	}
+
+	var east = 0.0;
+	var south = 0.0;
+	var west = 0.0;
+	var north = 0.0;
+	
+	function getGeoFenceSetting(){	//從server取得GeoFence設定
+		var sData = "";
+		sData = "uuid=" + uuid;
+		getDataFromServer("ajaxGetGeoFenceSetting.jsp", sData, "json", getGeoFenceSetting_Success);
+	}	//function getGeoFenceSetting(){	//從server取得GeoFence設定
+
+	function getGeoFenceSetting_Success(data){
+		var ResultCode = data.resultCode;
+		var ResultText = data.resultText;
+		if (ResultCode!='00000'){	//作業失敗
+			return;
+		}	//if (ResultCode=='00000'){	//作業成功
+		var sGeoFence = data.GeoFence;
+		if (beEmpty(sGeoFence) || sGeoFence.length<20){	//清除GeoFence
+			east = 0.0;
+			south = 0.0;
+			west = 0.0;
+			north = 0.0;
+		}else{
+			east = parseFloat(JSON.parse(sGeoFence).east);
+			south = parseFloat(JSON.parse(sGeoFence).south);
+			west = parseFloat(JSON.parse(sGeoFence).west);
+			north = parseFloat(JSON.parse(sGeoFence).north);
+		}
+		console.log("east=" + east);
+		console.log("south=" + south);
+		console.log("west=" + west);
+		console.log("north=" + north);
+		$('#txtMessage').val("fence: " + sGeoFence);
+	}
+
+	function doGeoFenceOutboundAlert_Success(data){
+		var ResultCode = data.resultCode;
+		var ResultText = data.resultText;
+		console.log("GeoFence outbound alert result=" + ResultCode);
+		$('#txtMessage').val("GeoFence outbound alert result=" + ResultCode);
+	}
+
 
 </script>
