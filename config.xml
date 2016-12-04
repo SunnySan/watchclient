@@ -1,8 +1,8 @@
 <?xml version='1.0' encoding='utf-8'?>
-<widget id="com.taisys.iovdemo.app" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:gap="http://phonegap.com/ns/1.0">
-    <name>IOVDemo</name>
+<widget id="com.taisys.mywatch.app" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:gap="http://phonegap.com/ns/1.0">
+    <name>MyWatch</name>
     <description>
-        This is a demo program of IoV platform.
+        This is a demo program of smart watch.
     </description>
     <author email="sunny.sun@taisys.com" href="http://www.taisys.com">
         Taisys
