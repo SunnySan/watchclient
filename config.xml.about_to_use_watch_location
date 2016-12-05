@@ -1,0 +1,39 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget id="com.taisys.mywatch.app" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:gap="http://phonegap.com/ns/1.0">
+    <name>MyWatch</name>
+    <description>
+        This is a demo program of smart watch.
+    </description>
+    <author email="sunny.sun@taisys.com" href="http://www.taisys.com">
+        Taisys
+    </author>
+    <preference name="phonegap-version" value="cli-6.3.0" />
+    <preference name="permissions" value="none" />
+    <preference name="orientation" value="portrait" />
+    <preference name="target-device" value="universal" />
+    <preference name="fullscreen" value="false" />
+    <preference name="webviewbounce" value="true" />
+    <preference name="prerendered-icon" value="true" />
+    <preference name="stay-in-webview" value="false" />
+    <preference name="ios-statusbarstyle" value="black-opaque" />
+    <preference name="detect-data-types" value="true" />
+    <preference name="exit-on-suspend" value="false" />
+    <preference name="disable-cursor" value="false" />
+    <preference name="android-minSdkVersion" value="7" />
+    <preference name="android-installLocation" value="auto" />
+    <icon src="icon.png" />
+    <icon gap:density="ldpi" gap:platform="android" src="res/icon/36.png" />
+    <icon gap:density="mdpi" gap:platform="android" src="res/icon/48.png" />
+    <icon gap:density="hdpi" gap:platform="android" src="res/icon/72.png" />
+    <icon gap:density="xhdpi" gap:platform="android" src="res/icon/96.png" />
+
+	<plugin name="cordova-plugin-network-information" spec="1.3.0" />
+	<plugin name="cordova-plugin-dialogs" spec="1.3.0" />
+    <plugin name="cordova-plugin-geolocation" spec="2.4.0" />
+    <plugin name="cordova-plugin-device" spec="1.1.3" />
+    <plugin name="cordova-plugin-whitelist" spec="1.3.0" />
+    <plugin name="cordova-plugin-sim" source="npm" />
+
+    <allow-navigation href="*" />
+	<gap:platform name="android" />
+</widget>
