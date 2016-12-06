@@ -130,10 +130,12 @@
 	}
 	
 	/**************** 取得SIM卡資訊 **************/
+	var isBackgroundGeolocationSupported = false;	//是否支援background geolocation
+	var isBackgroundGeolocationStarted = false;		//是否已啟動background geolocation
 
 	function getPosition(){
 		if(navigator.geolocation) {
-			navigator.geolocation.getCurrentPosition(function(position) {
+			navigator.geolocation.getCurrentPosition(function(position) {	//取得目前座標
 				if (beEmpty(position.coords.latitude) || beEmpty(position.coords.longitude)){
 					MsgBox("Unable to get your GPS location, please make sure you have turned on GPS, will set to default location!");
 					$('#frmUserLogin #txtLatitude').val('25');
@@ -157,8 +159,38 @@
 			$('#frmUserLogin #txtLatitude').val('25');
 			$('#frmUserLogin #txtLongitude').val('120');
 		}	//if(navigator.geolocation) {
+		
+		if (isRunInApp()){	//在手機APP執行，啟動background geolocation功能，請參考：https://www.npmjs.com/package/cordova-plugin-mauron85-background-geolocation
+			backgroundGeolocation.configure(backgroundLocationCallback, backgroundLocationFailure, {	//設定background geolocation
+				desiredAccuracy: 10,
+				stationaryRadius: 20,
+				distanceFilter: 30,
+				// Android only section 
+				locationProvider: backgroundGeolocation.provider.ANDROID_ACTIVITY_PROVIDER,
+				interval: 20000,
+				fastestInterval: 5000,
+				activitiesInterval: 10000,
+				notificationTitle: 'Background tracking',
+				notificationText: 'enabled',
+				notificationIconColor: '#FEDD1E',
+				notificationIconLarge: 'mappointer_large',
+				notificationIconSmall: 'mappointer_small'
+			});	//backgroundGeolocation.configure(backgroundLocationCallback, backgroundLocationFailure, {	//設定background geolocation
 
-	}
+			backgroundGeolocation.isLocationEnabled(function (enabled) {	//檢查是否有GPS服務
+				if (enabled) {
+					isBackgroundGeolocationSupported = true;
+				} else {
+					isBackgroundGeolocationSupported = false;
+					// Location services are disabled 
+					if (window.confirm('Location is disabled. Would you like to open location settings?')) {
+						backgroundGeolocation.showLocationSettings();
+					}
+				}
+			});	//backgroundGeolocation.isLocationEnabled(function (enabled) {	//檢查是否有GPS服務
+		}	//if (isRunInApp()){	//在手機APP執行，啟動background geolocation功能，請參考：https://www.npmjs.com/package/cordova-plugin-mauron85-background-geolocation
+
+	}	//function getPosition(){
 
 	var uuid		= "12345678";
 	var username	= "";
@@ -204,6 +236,7 @@
 	var client = null;
 	var myInterval = null
 	var lastReportGeoFenceAlertTime = 0;
+	var lastBackgroundLocationUpdateTime = 0;
 
 	function doMQTTConnect(){
 		client = new Paho.MQTT.Client("test.mosquitto.org", 8080, trim(username) + uuid);
@@ -223,9 +256,13 @@
 		client.send(message); 
 		*/
 
-		myInterval = setInterval(function () {
-			publish_message();
-		},10000);
+		if (isBackgroundGeolocationSupported){	//有使用Background Geolocation，啟動
+			backgroundGeolocation.start();
+		}else{
+			myInterval = setInterval(function () {
+				update_gps();
+			},10000);
+		}
 
 		$('#frmUserLogin #btnStart').hide();
 		$('#frmUserLogin #btnStop').show();
@@ -248,6 +285,11 @@
 			//MsgBox("Lost connection to server");
 			$('#txtMessage').val("Lost connection to server, reconnect...");
 			console.log("onConnectionLost:"+responseObject.errorMessage);
+			if (isBackgroundGeolocationSupported){	//有使用Background Geolocation，把它停掉
+				backgroundGeolocation.stop();
+			}else{
+				clearInterval(myInterval);
+			}
 			doMQTTConnect();
 		}
 	};
@@ -283,8 +325,8 @@
 		}
 	};	//function onMessageArrived(message) {
 
-	// 發佈訊息
-	function publish_message() {
+	//更新座標(未使用background geolocation)
+	function update_gps(){
 		if ($('#frmUserLogin #chkAutoMoving').is(':checked')){	//自動移動
 			var lon = parseFloat($('#frmUserLogin #txtLongitude').val());
 			lon -= 0.002;
@@ -309,6 +351,11 @@
 			}	//if(navigator.geolocation) {
 
 		}
+		publish_message();
+	}	//function update_gps(){
+
+	// 發佈訊息
+	function publish_message() {
 
 		var obj = new Object();
 		obj.lat = $('#frmUserLogin #txtLatitude').val();
@@ -343,7 +390,12 @@
 	}	//function publish_message() {
 
 	function doStop() {
-		clearInterval(myInterval);
+		if (isBackgroundGeolocationSupported){	//有使用Background Geolocation，把它停掉
+			backgroundGeolocation.stop();
+		}else{
+			clearInterval(myInterval);
+		}
+		
 		client.disconnect();
 		$('#frmUserLogin #btnStart').show();
 		$('#frmUserLogin #btnStop').hide();
@@ -394,5 +446,36 @@
 		$('#txtMessage').val("GeoFence outbound alert result=" + ResultCode);
 	}
 
+    var backgroundLocationCallback = function(location) {	//由background location收到新座標
+        console.log('[js] BackgroundGeolocation callback:  ' + location.latitude + ',' + location.longitude);
+        $('#txtMessage').val("BG:" + location.latitude + ',' + location.longitude);
+ 
+    	var timeNow = Math.floor(Date.now() / 1000);	//換算成以秒為單位
+    	if (lastBackgroundLocationUpdateTime==0 || (timeNow-lastBackgroundLocationUpdateTime)>20){	//每20秒更新一次
+    		lastBackgroundLocationUpdateTime = timeNow;
+			if ($('#frmUserLogin #chkAutoMoving').is(':checked')){	//自動移動
+				var lon = parseFloat($('#frmUserLogin #txtLongitude').val());
+				lon -= 0.002;
+				$('#frmUserLogin #txtLongitude').val(lon);
+			}else{
+				$('#txtLatitude').val(location.latitude);
+				$('#txtLongitude').val(location.longitude);
+				$('#txtLatitudeLabel').text('Latitude');
+			}
+			publish_message();
+    	}
+
+        /*
+        IMPORTANT:  You must execute the finish method here to inform the native plugin that you're finished,
+        and the background-task may be completed.  You must do this regardless if your HTTP request is successful or not.
+        IF YOU DON'T, ios will CRASH YOUR APP for spending too much time in the background.
+        */
+        backgroundGeolocation.finish();
+    };
+ 
+    var backgroundLocationFailure = function(error) {
+        console.log('BackgroundGeolocation error');
+        $('#txtMessage').val("BG ERR");
+    };
 
 </script>
