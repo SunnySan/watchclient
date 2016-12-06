@@ -159,7 +159,7 @@
 			$('#frmUserLogin #txtLatitude').val('25');
 			$('#frmUserLogin #txtLongitude').val('120');
 		}	//if(navigator.geolocation) {
-		alert(typeof(window.plugins.backgroundGeolocation));
+		alert(typeof(window.plugins.sim));
 		                    
 		//設定background geolocation功能，請參考：https://www.npmjs.com/package/cordova-plugin-mauron85-background-geolocation
 		backgroundGeolocation.configure(backgroundLocationCallback, backgroundLocationFailure, {	//設定background geolocation
