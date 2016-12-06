@@ -160,37 +160,36 @@
 			$('#frmUserLogin #txtLongitude').val('120');
 		}	//if(navigator.geolocation) {
 		
-		if (isRunInApp()){	//在手機APP執行，啟動background geolocation功能，請參考：https://www.npmjs.com/package/cordova-plugin-mauron85-background-geolocation
-			backgroundGeolocation.configure(backgroundLocationCallback, backgroundLocationFailure, {	//設定background geolocation
-				desiredAccuracy: 10,
-				stationaryRadius: 20,
-				distanceFilter: 30,
-				// Android only section 
-				locationProvider: backgroundGeolocation.provider.ANDROID_ACTIVITY_PROVIDER,
-				interval: 20000,
-				fastestInterval: 5000,
-				activitiesInterval: 10000,
-				notificationTitle: 'Background tracking',
-				notificationText: 'enabled',
-				notificationIconColor: '#FEDD1E',
-				notificationIconLarge: 'mappointer_large',
-				notificationIconSmall: 'mappointer_small'
-			});	//backgroundGeolocation.configure(backgroundLocationCallback, backgroundLocationFailure, {	//設定background geolocation
+		//設定background geolocation功能，請參考：https://www.npmjs.com/package/cordova-plugin-mauron85-background-geolocation
+		backgroundGeolocation.configure(backgroundLocationCallback, backgroundLocationFailure, {	//設定background geolocation
+			desiredAccuracy: 10,
+			stationaryRadius: 20,
+			distanceFilter: 30,
+			// Android only section 
+			locationProvider: backgroundGeolocation.provider.ANDROID_ACTIVITY_PROVIDER,
+			interval: 20000,
+			fastestInterval: 5000,
+			activitiesInterval: 10000,
+			notificationTitle: 'Background tracking',
+			notificationText: 'enabled',
+			notificationIconColor: '#FEDD1E',
+			notificationIconLarge: 'mappointer_large',
+			notificationIconSmall: 'mappointer_small'
+		});	//backgroundGeolocation.configure(backgroundLocationCallback, backgroundLocationFailure, {	//設定background geolocation
 
-			backgroundGeolocation.isLocationEnabled(function (enabled) {	//檢查是否有GPS服務
-				if (enabled) {
-					isBackgroundGeolocationSupported = true;
-					MsgBox("support background location");
-				} else {
-					isBackgroundGeolocationSupported = false;
-					MsgBox("doesn't support background location");
-					// Location services are disabled 
-					if (window.confirm('Location is disabled. Would you like to open location settings?')) {
-						backgroundGeolocation.showLocationSettings();
-					}
+		backgroundGeolocation.isLocationEnabled(function (enabled) {	//檢查是否有GPS服務
+			if (enabled) {
+				isBackgroundGeolocationSupported = true;
+				MsgBox("support background location");
+			} else {
+				isBackgroundGeolocationSupported = false;
+				MsgBox("doesn't support background location");
+				// Location services are disabled 
+				if (window.confirm('Location is disabled. Would you like to open location settings?')) {
+					backgroundGeolocation.showLocationSettings();
 				}
-			});	//backgroundGeolocation.isLocationEnabled(function (enabled) {	//檢查是否有GPS服務
-		}	//if (isRunInApp()){	//在手機APP執行，啟動background geolocation功能，請參考：https://www.npmjs.com/package/cordova-plugin-mauron85-background-geolocation
+			}
+		});	//backgroundGeolocation.isLocationEnabled(function (enabled) {	//檢查是否有GPS服務
 
 	}	//function getPosition(){
 
