@@ -1,0 +1,7 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<account-authenticator
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accountType="com.taisys.mywatch.app"
+    android:icon="@drawable-hdpi-v4/icon.png"
+    android:smallIcon="@drawable-ldpi-v4/icon.png"
+    android:label="@string/authLabel"/>
