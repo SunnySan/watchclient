@@ -180,6 +180,7 @@
 			backgroundGeolocation.isLocationEnabled(function (enabled) {	//檢查是否有GPS服務
 				if (enabled) {
 					isBackgroundGeolocationSupported = true;
+					MsgBox("support background location");
 				} else {
 					isBackgroundGeolocationSupported = false;
 					// Location services are disabled 
