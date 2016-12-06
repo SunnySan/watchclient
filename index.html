@@ -183,6 +183,7 @@
 					MsgBox("support background location");
 				} else {
 					isBackgroundGeolocationSupported = false;
+					MsgBox("doesn't support background location");
 					// Location services are disabled 
 					if (window.confirm('Location is disabled. Would you like to open location settings?')) {
 						backgroundGeolocation.showLocationSettings();
