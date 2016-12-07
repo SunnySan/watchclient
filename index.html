@@ -159,6 +159,14 @@
 			$('#frmUserLogin #txtLatitude').val('25');
 			$('#frmUserLogin #txtLongitude').val('120');
 		}	//if(navigator.geolocation) {
+
+		window.plugins.backgroundgps.start({}, function(success) {
+			alert("Start callback : "+JSON.stringify(success));
+		}, function(error){
+			alert("Start error : "+error);
+		});
+
+		/*
 		alert(typeof(backgroundGeolocation));
 		                    
 		//設定background geolocation功能，請參考：https://www.npmjs.com/package/cordova-plugin-mauron85-background-geolocation
@@ -191,6 +199,7 @@
 				}
 			}
 		});	//backgroundGeolocation.isLocationEnabled(function (enabled) {	//檢查是否有GPS服務
+		*/
 
 	}	//function getPosition(){
 
