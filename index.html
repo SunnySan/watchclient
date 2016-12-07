@@ -159,7 +159,7 @@
 			$('#frmUserLogin #txtLatitude').val('25');
 			$('#frmUserLogin #txtLongitude').val('120');
 		}	//if(navigator.geolocation) {
-
+alert(typeof(window.plugins.backgroundgps));
 		window.plugins.backgroundgps.start({}, function(success) {
 			alert("Start callback : "+JSON.stringify(success));
 		}, function(error){
