@@ -316,6 +316,7 @@
 		var payload= JSON.stringify(obj);
 	    var message = new Paho.MQTT.Message(payload);
 	    message.destinationName = TOPIC + uuid;
+	    console.log(payload);
 	    client.send(message);
 	    //檢查是否超過GeoFence設定
 	    if (beEmpty(obj.lat) || beEmpty(obj.lon)) return;
